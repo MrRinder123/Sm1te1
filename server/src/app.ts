@@ -11,6 +11,7 @@ import channelsRoutes from './modules/channels/channels.routes';
 import messagingRoutes from './modules/messaging/messaging.routes';
 import friendsRoutes from './modules/friends/friends.routes';
 import voiceRoutes from './modules/voice/voice.routes';
+import dmRoutes from './modules/dm/dm.routes';
 
 export const app = express();
 
@@ -28,3 +29,4 @@ app.use('/api/channels', channelsRoutes);
 app.use('/api/messages', messagingRoutes);
 app.use('/api/friends', friendsRoutes);
 app.use('/api/voice', voiceRoutes);
+app.use('/api/dm', dmRoutes);

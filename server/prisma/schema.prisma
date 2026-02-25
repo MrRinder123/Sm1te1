@@ -8,18 +8,24 @@ datasource db {
 }
 
 model User {
-  id             String          @id @default(cuid())
-  email          String          @unique
-  username       String          @unique
-  passwordHash   String
-  avatarUrl      String?
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
-  memberships    ServerMember[]
-  messages       Message[]
-  sentRequests   FriendRequest[] @relation("sentRequests")
-  recvRequests   FriendRequest[] @relation("receivedRequests")
-  refreshTokens  RefreshToken[]
+  id               String               @id @default(cuid())
+  email            String               @unique
+  username         String               @unique
+  passwordHash     String
+  avatarUrl        String?
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+  memberships      ServerMember[]
+  messages         Message[]
+  readReceipts     MessageReadReceipt[]
+  sentRequests     FriendRequest[]      @relation("sentRequests")
+  recvRequests     FriendRequest[]      @relation("receivedRequests")
+  sentFriendships  Friendship[]         @relation("friendshipUserA")
+  recvFriendships  Friendship[]         @relation("friendshipUserB")
+  refreshTokens    RefreshToken[]
+  directChannelsA  DirectMessageRoom[]  @relation("dmUserA")
+  directChannelsB  DirectMessageRoom[]  @relation("dmUserB")
+  directMessages   DirectMessage[]
 }
 
 model RefreshToken {
@@ -65,15 +71,27 @@ model Channel {
 }
 
 model Message {
-  id         String     @id @default(cuid())
+  id         String               @id @default(cuid())
   content    String
   channelId  String
   authorId   String
   editedAt   DateTime?
-  createdAt  DateTime   @default(now())
-  channel    Channel    @relation(fields: [channelId], references: [id], onDelete: Cascade)
-  author     User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  createdAt  DateTime             @default(now())
+  channel    Channel              @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  author     User                 @relation(fields: [authorId], references: [id], onDelete: Cascade)
   reactions  Reaction[]
+  receipts   MessageReadReceipt[]
+}
+
+model MessageReadReceipt {
+  id        String   @id @default(cuid())
+  messageId String
+  userId    String
+  readAt    DateTime @default(now())
+  message   Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, userId])
 }
 
 model Reaction {
@@ -87,15 +105,48 @@ model Reaction {
 }
 
 model FriendRequest {
-  id          String   @id @default(cuid())
-  senderId    String
-  receiverId  String
-  status      RequestStatus @default(PENDING)
-  createdAt   DateTime @default(now())
-  sender      User     @relation("sentRequests", fields: [senderId], references: [id], onDelete: Cascade)
-  receiver    User     @relation("receivedRequests", fields: [receiverId], references: [id], onDelete: Cascade)
+  id         String        @id @default(cuid())
+  senderId   String
+  receiverId String
+  status     RequestStatus @default(PENDING)
+  createdAt  DateTime      @default(now())
+  sender     User          @relation("sentRequests", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver   User          @relation("receivedRequests", fields: [receiverId], references: [id], onDelete: Cascade)
 
   @@unique([senderId, receiverId])
+}
+
+model Friendship {
+  id        String   @id @default(cuid())
+  userAId   String
+  userBId   String
+  createdAt DateTime @default(now())
+  userA     User     @relation("friendshipUserA", fields: [userAId], references: [id], onDelete: Cascade)
+  userB     User     @relation("friendshipUserB", fields: [userBId], references: [id], onDelete: Cascade)
+
+  @@unique([userAId, userBId])
+}
+
+model DirectMessageRoom {
+  id        String          @id @default(cuid())
+  userAId   String
+  userBId   String
+  createdAt DateTime        @default(now())
+  userA     User            @relation("dmUserA", fields: [userAId], references: [id], onDelete: Cascade)
+  userB     User            @relation("dmUserB", fields: [userBId], references: [id], onDelete: Cascade)
+  messages  DirectMessage[]
+
+  @@unique([userAId, userBId])
+}
+
+model DirectMessage {
+  id        String            @id @default(cuid())
+  roomId    String
+  senderId  String
+  content   String
+  createdAt DateTime          @default(now())
+  room      DirectMessageRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  sender    User              @relation(fields: [senderId], references: [id], onDelete: Cascade)
 }
 
 enum Role {

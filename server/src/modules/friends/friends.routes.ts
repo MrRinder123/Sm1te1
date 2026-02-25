@@ -17,6 +17,18 @@ router.get('/', requireAuth, async (req, res) => {
   return res.json(requests);
 });
 
+router.get('/list', requireAuth, async (req, res) => {
+  const friends = await prisma.friendship.findMany({
+    where: { OR: [{ userAId: req.user!.userId }, { userBId: req.user!.userId }] },
+    include: {
+      userA: { select: { id: true, username: true, avatarUrl: true } },
+      userB: { select: { id: true, username: true, avatarUrl: true } }
+    }
+  });
+
+  return res.json(friends.map((f) => f.userAId === req.user!.userId ? f.userB : f.userA));
+});
+
 router.post('/request', requireAuth, validateBody(z.object({ receiverId: z.string() })), async (req, res) => {
   const request = await prisma.friendRequest.create({
     data: { senderId: req.user!.userId, receiverId: req.body.receiverId }
@@ -32,6 +44,13 @@ router.post('/request/:id/respond', requireAuth, validateBody(z.object({ action:
     where: { id: req.params.id },
     data: { status: req.body.action }
   });
+
+  if (req.body.action === 'ACCEPTED') {
+    const [userAId, userBId] = [existing.senderId, existing.receiverId].sort();
+    await prisma.friendship.upsert({ where: { userAId_userBId: { userAId, userBId } }, update: {}, create: { userAId, userBId } });
+    await prisma.directMessageRoom.upsert({ where: { userAId_userBId: { userAId, userBId } }, update: {}, create: { userAId, userBId } });
+  }
+
   return res.json(request);
 });
 

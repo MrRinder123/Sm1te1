@@ -54,6 +54,15 @@ FoxCord is an original Discord-inspired real-time chat platform built on top of 
 - `docker-compose` for PostgreSQL + backend + frontend services.
 - `.env.example` with required settings.
 
+
+### 8) Continued development (Phase 2)
+- Added server permission middleware (`ADMIN`/`MODERATOR`/`MEMBER`) and enforced role-based access for channel and role management.
+- Added member listing + role update APIs for server administration.
+- Added unread counters and read-receipt persistence with a dedicated message receipt model.
+- Added mention-aware UX improvements (highlight + toast notifications) and unread badges in channel navigation.
+- Expanded friend flow to materialize accepted friendships and auto-provision DM rooms.
+- Added direct-message room/message APIs and Socket.io DM room events.
+
 ## Setup Instructions
 
 1. Install dependencies:
